@@ -1,0 +1,149 @@
+version: "3"
+
+services:
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+    networks:
+      - usersNet
+      - ownerNet
+      - customerNet
+      - courierNet
+
+#  redis:
+#    image: redis
+#    ports:
+#      - 6379:6379
+#    networks:
+#      - usersNet
+#      - ownerNet
+#      - courierNet
+#      - customerNet
+
+  usersDB:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+    volumes:
+      - usersData:/var/lib/mysql
+    networks:
+      - usersNet
+
+  usersMigrations:
+    image: usersmigrations
+    environment:
+      - DATABASE_URL=usersDB
+    depends_on:
+      usersDB:
+        condition: service_healthy
+    networks:
+      - usersNet
+    build:
+      context: .
+      dockerfile: usersMigrations.dockerfile
+
+  users:
+    image: users
+    environment:
+      - DATABASE_URL=usersDB
+    depends_on:
+      - usersMigrations
+    ports:
+      - 5000:5000
+    networks:
+      - usersNet
+    build:
+      context: .
+      dockerfile: users.dockerfile
+
+  shopDB:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 10s
+      retries: 10
+    volumes:
+      - shopData:/var/lib/mysql
+    networks:
+      - ownerNet
+      - customerNet
+      - courierNet
+
+  shopMigrations:
+    image: shopmigrations
+    environment:
+      - DATABASE_URL=shopDB
+    depends_on:
+      storeDB:
+        condition: service_healthy
+    networks:
+      - ownerNet
+      - customerNet
+      - courierNet
+    build:
+      context: .
+      dockerfile: shopMigrations.dockerfile
+
+  owner:
+    image: owner
+    environment:
+      - DATABASE_URL=shopDB
+    depends_on:
+      - shopMigrations
+    ports:
+      - 5001:5000
+    networks:
+      - ownerNet
+    build:
+      context: .
+      dockerfile: owner.dockerfile
+
+  customer:
+    image: customer
+    environment:
+      - DATABASE_URL=shopDB
+    depends_on:
+      - shopMigrations
+    ports:
+      - 5002:5000
+    networks:
+      - customerNet
+    build:
+      context: .
+      dockerfile: customer.dockerfile
+
+  courier:
+    image: courier
+    environment:
+      - DATABASE_URL=shopDB
+    depends_on:
+      - shopMigrations
+    ports:
+      - 5003:5000
+    networks:
+      - courierNet
+    build:
+      context: .
+      dockerfile: courier.dockerfile
+
+#  spark:
+#
+#  blockChain:
+
+volumes:
+  usersData:
+  shopData:
+
+networks:
+  usersNet:
+  ownerNet:
+  customerNet:
+  courierNet:
