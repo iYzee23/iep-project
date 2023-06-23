@@ -33,7 +33,6 @@ def mUpdate():
     product_already_exists_indicator = ""
 
     for row in reader:
-        print(row)
         if len(row) != 3:
             return jsonify({
                 'message': f'Incorrect number of values on line {line_number}.'
@@ -102,14 +101,14 @@ def mGetProductStatistics():
 
     statistics = database.session.query(
         Product.name, f1, f2
-    ).join(
+    ).outerjoin(
         ProductOrder, Product.id == ProductOrder.product_id
-    ).join(
+    ).outerjoin(
         Order, ProductOrder.order_id == Order.id
     ).group_by(
         Product.name
     ).having(
-        f1 > 0
+        f1 + f2 > 0
     ).order_by(
         Product.name
     ).all()
@@ -132,13 +131,13 @@ def mGetCategoryStatistics():
 
     statistics = database.session.query(
         Category.name, f
-    ).join(
+    ).outerjoin(
         ProductCategory, Category.id == ProductCategory.category_id
-    ).join(
+    ).outerjoin(
         Product, ProductCategory.product_id == Product.id
-    ).join(
+    ).outerjoin(
         ProductOrder, Product.id == ProductOrder.product_id
-    ).join(
+    ).outerjoin(
         Order, ProductOrder.order_id == Order.id
     ).group_by(
         Category.name
@@ -146,9 +145,9 @@ def mGetCategoryStatistics():
         f.desc(), Category.name
     ).all()
 
-    result = {"statistics": [category for category, cnt in statistics]}
+    result = {"statistics": [category.name for category in statistics]}
 
-    return jsonify(result), 200
+    return jsonify(result)
 
 
 if __name__ == "__main__":

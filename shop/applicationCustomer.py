@@ -53,7 +53,6 @@ def mSearchProducts():
             Product.name.like(f"%{product_name}%")
         )
     categories = cQuery.distinct(Category.name).all()
-    print(categories)
 
     response = {
         "categories": [category.name for category in categories],
