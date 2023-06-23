@@ -19,7 +19,7 @@ jwt = JWTManager(application)
 def mUpdate():
     if 'file' not in request.files:
         return jsonify({
-            'message': 'Field file missing.'
+            'message': 'Field file is missing.'
         }), 400
 
     content = request.files["file"].stream.read().decode("utf-8")
@@ -29,7 +29,11 @@ def mUpdate():
     line_number = 0
     existing_products = set()
 
+    incorrect_price_indicator = -1
+    product_already_exists_indicator = ""
+
     for row in reader:
+        print(row)
         if len(row) != 3:
             return jsonify({
                 'message': f'Incorrect number of values on line {line_number}.'
@@ -37,24 +41,30 @@ def mUpdate():
 
         categories, name, price = row
         try:
-            price = float(price)
-            if price <= 0:
-                return jsonify({
-                    'message': f'Incorrect price on line {line_number}.'
-                }), 400
-        except ValueError:
-            return jsonify({
-                'message': f'Incorrect price on line {line_number}.'
-            }), 400
+            if float(price) <= 0:
+                if incorrect_price_indicator == -1:
+                    incorrect_price_indicator = line_number
+        except Exception:
+            if incorrect_price_indicator == -1:
+                incorrect_price_indicator = line_number
 
         if name in existing_products or Product.query.filter(Product.name == name).first():
-            return jsonify({
-                'message': f'Product {name} already exists.'
-            }), 400
+            if not product_already_exists_indicator:
+                product_already_exists_indicator = name
         existing_products.add(name)
 
         products.append((categories, name, price))
         line_number += 1
+
+    if incorrect_price_indicator != -1:
+        return jsonify({
+            'message': f'Incorrect price on line {incorrect_price_indicator}.'
+        }), 400
+
+    if product_already_exists_indicator:
+        return jsonify({
+            'message': f'Product {product_already_exists_indicator} already exists.'
+        }), 400
 
     for categories, name, price in products:
         prod = Product(name=name, price=price)
@@ -65,7 +75,7 @@ def mUpdate():
             cat = Category.query.filter(Category.name == category).first()
             if not cat:
                 cat = Category()
-                cat.name = name
+                cat.name = category
                 database.session.add(cat)
                 database.session.commit()
             prod_cat = ProductCategory()
@@ -81,31 +91,34 @@ def mUpdate():
 @roleCheck("owner")
 @jwt_required()
 def mGetProductStatistics():
+    f1 = func.sum(func.IF(
+        Order.status == Status.COMPLETE,
+        ProductOrder.quantity, 0)
+    )
+    f2 = func.sum(func.IF(
+        or_(Order.status == Status.CREATED, Order.status == Status.PENDING),
+        ProductOrder.quantity, 0)
+    )
+
     statistics = database.session.query(
-        Product.name,
-        func.sum(func.IF(
-            Order.status == Status.COMPLETE,
-            ProductOrder.quantity, 0)
-        ),
-        func.sum(func.IF(
-            or_(Order.status == Status.CREATED, Order.status == Status.PENDING),
-            ProductOrder.quantity, 0)
-        )
+        Product.name, f1, f2
     ).join(
         ProductOrder, Product.id == ProductOrder.product_id
     ).join(
         Order, ProductOrder.order_id == Order.id
     ).group_by(
         Product.name
+    ).having(
+        f1 > 0
     ).order_by(
         Product.name
     ).all()
 
     result = {"statistics": []}
     for name, sold, waiting in statistics:
-        result["statistics"].append({"name": name, "sold": sold, "waiting": waiting})
+        result["statistics"].append({"name": name, "sold": int(sold), "waiting": int(waiting)})
 
-    return jsonify(result), 200
+    return jsonify(result)
 
 
 @application.route('/category_statistics', methods=['GET'])
@@ -140,4 +153,5 @@ def mGetCategoryStatistics():
 
 if __name__ == "__main__":
     database.init_app(application)
-    application.run(debug=True, host="0.0.0.0")
+    application.run(debug=True, port="5001")
+    # application.run(debug=True, host="0.0.0.0")

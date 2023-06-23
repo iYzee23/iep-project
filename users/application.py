@@ -20,11 +20,21 @@ def checkEmail(email):
 @application.route("/register_customer", methods=["POST"])
 @application.route("/register_courier", methods=["POST"])
 def mRegister():
-    data = request.get_json()
-    missing_fields = [field for field in ['forename', 'surname', 'email', 'password'] if field not in data]
-    if missing_fields:
+    if "forename" not in request.json or not request.json["forename"]:
         return jsonify({
-            'message': f'Field {", ".join(missing_fields)} is missing.'
+            'message': f'Field forename is missing.'
+        }), 400
+    if "surname" not in request.json or not request.json["surname"]:
+        return jsonify({
+            'message': f'Field surname is missing.'
+        }), 400
+    if "email" not in request.json or not request.json["email"]:
+        return jsonify({
+            'message': f'Field email is missing.'
+        }), 400
+    if "password" not in request.json or not request.json["password"]:
+        return jsonify({
+            'message': f'Field password is missing.'
         }), 400
 
     email = request.json["email"]
@@ -64,11 +74,13 @@ def mRegister():
 
 @application.route("/login", methods=["POST"])
 def mLogin():
-    data = request.get_json()
-    missing_fields = [field for field in ['email', 'password'] if field not in data]
-    if missing_fields:
+    if "email" not in request.json or not request.json["email"]:
         return jsonify({
-            'message': f'Field {", ".join(missing_fields)} is missing.'
+            'message': f'Field email is missing.'
+        }), 400
+    if "password" not in request.json or not request.json["password"]:
+        return jsonify({
+            'message': f'Field password is missing.'
         }), 400
 
     email = request.json["email"]
@@ -119,4 +131,5 @@ def mDelete():
 
 if __name__ == "__main__":
     database.init_app(application)
-    application.run(debug=True, host="0.0.0.0")
+    application.run(debug=True)
+    # application.run(debug=True, host="0.0.0.0")

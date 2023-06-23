@@ -16,43 +16,54 @@ jwt = JWTManager(application)
 @roleCheck("customer")
 @jwt_required()
 def mSearchProducts():
-    product_name = request.args["name"]
-    category_name = request.args["category"]
+    product_name = ""
+    category_name = ""
 
-    query = Product.query
+    if "name" in request.args:
+        product_name = request.args["name"]
+    if "category" in request.args:
+        category_name = request.args["category"]
+
+    pQuery = Product.query
     if product_name:
-        query = query.filter(
+        pQuery = pQuery.filter(
             Product.name.like(f"%{product_name}%")
         )
     if category_name:
-        query = query.join(
+        pQuery = pQuery.join(
             ProductCategory, Product.id == ProductCategory.product_id
         ).join(
             Category, ProductCategory.category_id == Category.id
         ).filter(
             Category.name.like(f"%{category_name}%")
         )
-    products = query.all()
+    products = pQuery.all()
 
-    categories = database.session.query(
-        distinct(Category.name)
-    ).join(
-        ProductCategory, Category.id == ProductCategory.category_id
-    ).join(
-        Product, ProductCategory.product_id == Product.id
-    ).filter(
-        query.subquery()
-    ).all()
+    cQuery = Category.query
+    if category_name:
+        cQuery = cQuery.filter(
+            Category.name.like(f"%{category_name}%")
+        )
+    if product_name:
+        cQuery = cQuery.join(
+            ProductCategory, Category.id == ProductCategory.category_id
+        ).join(
+            Product, ProductCategory.product_id == Product.id
+        ).filter(
+            Product.name.like(f"%{product_name}%")
+        )
+    categories = cQuery.distinct(Category.name).all()
+    print(categories)
 
     response = {
-        "categories": categories,
+        "categories": [category.name for category in categories],
         "products": []
     }
 
     # Populate the response data with product information
     for product in products:
         product_data = {
-            "categories": product.categories,
+            "categories": [category.name for category in product.categories],
             "id": product.id,
             "name": product.name,
             "price": product.price
@@ -133,16 +144,16 @@ def mGetOrderStatus():
     result = {"orders": []}
     for order in orders:
         order_data = {
+            "products": [],
             "price": order.price,
             "status": order.status.value,
-            "timestamp": order.timestamp.isoformat(),
-            "products": []
+            "timestamp": order.timestamp.isoformat()
         }
 
         for prod in order.products:
             prod_data = {
-                "categories": prod.categories,
-                "id": prod.id,
+                "categories": [category.name for category in prod.categories],
+                # "id": prod.id,
                 "name": prod.name,
                 "price": prod.price,
                 "quantity": ProductOrder.query.filter(and_(
@@ -187,4 +198,5 @@ def mConfirmDelivery():
 
 if __name__ == "__main__":
     database.init_app(application)
-    application.run(debug=True, host="0.0.0.0")
+    application.run(debug=True, port="5002")
+    # application.run(debug=True, host="0.0.0.0")
