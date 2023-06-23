@@ -12,15 +12,13 @@ services:
       - customerNet
       - courierNet
 
-#  redis:
-#    image: redis
-#    ports:
-#      - 6379:6379
-#    networks:
-#      - usersNet
-#      - ownerNet
-#      - courierNet
-#      - customerNet
+  redisSystem:
+    image: redis
+    networks:
+      - usersNet
+      - ownerNet
+      - courierNet
+      - customerNet
 
   usersDB:
     image: mysql
@@ -39,6 +37,7 @@ services:
     image: usersmigrations
     environment:
       - DATABASE_URL=usersDB
+      - REDIS_HOST=redisSystem
     depends_on:
       usersDB:
         condition: service_healthy
@@ -52,6 +51,7 @@ services:
     image: users
     environment:
       - DATABASE_URL=usersDB
+      - REDIS_HOST=redisSystem
     depends_on:
       - usersMigrations
     ports:
@@ -81,6 +81,7 @@ services:
     image: shopmigrations
     environment:
       - DATABASE_URL=shopDB
+      - REDIS_HOST=redisSystem
     depends_on:
       shopDB:
         condition: service_healthy
@@ -96,6 +97,7 @@ services:
     image: owner
     environment:
       - DATABASE_URL=shopDB
+      - REDIS_HOST=redisSystem
     depends_on:
       - shopMigrations
     ports:
@@ -110,6 +112,7 @@ services:
     image: customer
     environment:
       - DATABASE_URL=shopDB
+      - REDIS_HOST=redisSystem
     depends_on:
       - shopMigrations
     ports:
@@ -124,6 +127,7 @@ services:
     image: courier
     environment:
       - DATABASE_URL=shopDB
+      - REDIS_HOST=redisSystem
     depends_on:
       - shopMigrations
     ports:

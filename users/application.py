@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from sqlalchemy import and_
 from models import *
 from configuration import Configuration
+from redis import Redis
 import re
 
 
@@ -69,6 +70,10 @@ def mRegister():
     database.session.add(user)
     database.session.commit()
 
+    with Redis(host=Configuration.REDIS_HOST) as redis:
+        if redis.exists(email):
+            redis.delete(email)
+
     return jsonify()
 
 
@@ -125,6 +130,9 @@ def mDelete():
 
     database.session.delete(user)
     database.session.commit()
+
+    with Redis(host=Configuration.REDIS_HOST) as redis:
+        redis.set(userMail, "", ex=3600)
 
     return jsonify()
 
