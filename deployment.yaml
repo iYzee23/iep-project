@@ -82,7 +82,7 @@ services:
     environment:
       - DATABASE_URL=shopDB
     depends_on:
-      storeDB:
+      shopDB:
         condition: service_healthy
     networks:
       - ownerNet

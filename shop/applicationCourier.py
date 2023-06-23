@@ -53,5 +53,5 @@ def mPickupOrder():
 
 if __name__ == "__main__":
     database.init_app(application)
-    application.run(debug=True, port="5003")
-    # application.run(debug=True, host="0.0.0.0")
+    # application.run(debug=True, port="5003")
+    application.run(debug=True, host="0.0.0.0")
