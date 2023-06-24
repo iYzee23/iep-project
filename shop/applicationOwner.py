@@ -4,13 +4,16 @@ from sqlalchemy import or_, func
 from models import *
 from configuration import Configuration
 from decorator import roleCheck
-import csv
-import io
+import csv, io, os, requests
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
 
 jwt = JWTManager(application)
+
+
+sparkIndicator = True if "SPARK_MODE" in os.environ else False
+sparkUrl = os.environ["SPARK_URL"] if "SPARK_URL" in os.environ else "localhost"
 
 
 @application.route('/update', methods=['POST'])
@@ -90,64 +93,72 @@ def mUpdate():
 @roleCheck("owner")
 @jwt_required()
 def mGetProductStatistics():
-    f1 = func.sum(func.IF(
-        Order.status == Status.COMPLETE,
-        ProductOrder.quantity, 0)
-    )
-    f2 = func.sum(func.IF(
-        or_(Order.status == Status.CREATED, Order.status == Status.PENDING),
-        ProductOrder.quantity, 0)
-    )
+    if sparkIndicator:
+        result = requests.get(f'http://{sparkUrl}:5000/sparkProducts')
+        return result.content, result.status_code
+    else:
+        f1 = func.sum(func.IF(
+            Order.status == Status.COMPLETE,
+            ProductOrder.quantity, 0)
+        )
+        f2 = func.sum(func.IF(
+            or_(Order.status == Status.CREATED, Order.status == Status.PENDING),
+            ProductOrder.quantity, 0)
+        )
 
-    statistics = database.session.query(
-        Product.name, f1, f2
-    ).outerjoin(
-        ProductOrder, Product.id == ProductOrder.product_id
-    ).outerjoin(
-        Order, ProductOrder.order_id == Order.id
-    ).group_by(
-        Product.name
-    ).having(
-        f1 + f2 > 0
-    ).order_by(
-        Product.name
-    ).all()
+        statistics = database.session.query(
+            Product.name, f1, f2
+        ).outerjoin(
+            ProductOrder, Product.id == ProductOrder.product_id
+        ).outerjoin(
+            Order, ProductOrder.order_id == Order.id
+        ).group_by(
+            Product.name
+        ).having(
+            f1 + f2 > 0
+        ).order_by(
+            Product.name
+        ).all()
 
-    result = {"statistics": []}
-    for name, sold, waiting in statistics:
-        result["statistics"].append({"name": name, "sold": int(sold), "waiting": int(waiting)})
+        result = {"statistics": []}
+        for name, sold, waiting in statistics:
+            result["statistics"].append({"name": name, "sold": int(sold), "waiting": int(waiting)})
 
-    return jsonify(result)
+        return jsonify(result)
 
 
 @application.route('/category_statistics', methods=['GET'])
 @roleCheck("owner")
 @jwt_required()
 def mGetCategoryStatistics():
-    f = func.sum(func.IF(
-        Order.status == Status.COMPLETE,
-        ProductOrder.quantity, 0
-    ))
+    if sparkIndicator:
+        result = requests.get(f'http://{sparkUrl}:5000/sparkCategory')
+        return result.content, result.status_code
+    else:
+        f = func.sum(func.IF(
+            Order.status == Status.COMPLETE,
+            ProductOrder.quantity, 0
+        ))
 
-    statistics = database.session.query(
-        Category.name, f
-    ).outerjoin(
-        ProductCategory, Category.id == ProductCategory.category_id
-    ).outerjoin(
-        Product, ProductCategory.product_id == Product.id
-    ).outerjoin(
-        ProductOrder, Product.id == ProductOrder.product_id
-    ).outerjoin(
-        Order, ProductOrder.order_id == Order.id
-    ).group_by(
-        Category.name
-    ).order_by(
-        f.desc(), Category.name
-    ).all()
+        statistics = database.session.query(
+            Category.name, f
+        ).outerjoin(
+            ProductCategory, Category.id == ProductCategory.category_id
+        ).outerjoin(
+            Product, ProductCategory.product_id == Product.id
+        ).outerjoin(
+            ProductOrder, Product.id == ProductOrder.product_id
+        ).outerjoin(
+            Order, ProductOrder.order_id == Order.id
+        ).group_by(
+            Category.name
+        ).order_by(
+            f.desc(), Category.name
+        ).all()
 
-    result = {"statistics": [category.name for category in statistics]}
+        result = {"statistics": [category.name for category in statistics]}
 
-    return jsonify(result)
+        return jsonify(result)
 
 
 if __name__ == "__main__":

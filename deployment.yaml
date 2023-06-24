@@ -138,10 +138,6 @@ services:
       context: .
       dockerfile: courier.dockerfile
 
-#  spark:
-#
-#  blockChain:
-
 volumes:
   usersData:
   shopData:

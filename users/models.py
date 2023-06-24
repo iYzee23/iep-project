@@ -4,14 +4,14 @@ database = SQLAlchemy()
 
 
 class Role(database.Model):
-    __tablename__ = "role"
+    __tablename__ = "role_table"
     name = database.Column(database.String(8), primary_key=True)
 
     users = database.relationship("User", back_populates="role")
 
 
 class User(database.Model):
-    __tablename__ = "user"
+    __tablename__ = "user_table"
     email = database.Column(database.String(256), primary_key=True)
     password = database.Column(database.String(256), nullable=False)
     forename = database.Column(database.String(256), nullable=False)

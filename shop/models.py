@@ -12,15 +12,15 @@ class Status(enum.Enum):
 
 
 class ProductOrder(database.Model):
-    __tablename__ = "product_order"
+    __tablename__ = "product_order_table"
     id = database.Column(database.Integer, primary_key=True)
     quantity = database.Column(database.Integer, nullable=False)
-    product_id = database.Column(database.Integer, database.ForeignKey("product.id"), nullable=False)
-    order_id = database.Column(database.Integer, database.ForeignKey("order.id"), nullable=False)
+    product_id = database.Column(database.Integer, database.ForeignKey("product_table.id"), nullable=False)
+    order_id = database.Column(database.Integer, database.ForeignKey("order_table.id"), nullable=False)
 
 
 class Order(database.Model):
-    __tablename__ = "order"
+    __tablename__ = "order_table"
     id = database.Column(database.Integer, primary_key=True)
     price = database.Column(database.Float, nullable=False)
     status = database.Column(database.Enum(Status), nullable=False, default=Status.CREATED)
@@ -31,14 +31,14 @@ class Order(database.Model):
 
 
 class ProductCategory(database.Model):
-    __tablename__ = "product_category"
+    __tablename__ = "product_category_table"
     id = database.Column(database.Integer, primary_key=True)
-    product_id = database.Column(database.Integer, database.ForeignKey("product.id"), nullable=False)
-    category_id = database.Column(database.Integer, database.ForeignKey("category.id"), nullable=False)
+    product_id = database.Column(database.Integer, database.ForeignKey("product_table.id"), nullable=False)
+    category_id = database.Column(database.Integer, database.ForeignKey("category_table.id"), nullable=False)
 
 
 class Category(database.Model):
-    __tablename__ = "category"
+    __tablename__ = "category_table"
     id = database.Column(database.Integer, primary_key=True)
     name = database.Column(database.String(256), nullable=False, unique=True)
 
@@ -46,7 +46,7 @@ class Category(database.Model):
 
 
 class Product(database.Model):
-    __tablename__ = "product"
+    __tablename__ = "product_table"
     id = database.Column(database.Integer, primary_key=True)
     name = database.Column(database.String(256), nullable=False, unique=True)
     price = database.Column(database.Float, nullable=False)
