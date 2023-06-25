@@ -3,6 +3,13 @@ from flask_jwt_extended import get_jwt, verify_jwt_in_request, get_jwt_identity
 from flask import jsonify
 from redis import Redis
 from configuration import Configuration
+from web3 import Web3, HTTPProvider
+import os
+
+
+def read_file(path):
+    with open(path, "r") as file:
+        return file.read()
 
 
 def roleCheck(role_name):
@@ -25,3 +32,13 @@ def roleCheck(role_name):
                 }), 401
         return decorator
     return innerRole
+
+
+blockChainUrl = os.environ["BLOCKCHAIN_URL"] if "BLOCKCHAIN_URL" in os.environ else "localhost"
+web3 = Web3(HTTPProvider(f"http://{blockChainUrl}:8545"))
+
+bytecode = read_file("./OrderContract.bin")
+abi = read_file("./OrderContract.abi")
+
+orderContract = web3.eth.contract(bytecode=bytecode, abi=abi)
+owner = web3.eth.accounts[0]

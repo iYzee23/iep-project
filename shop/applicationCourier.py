@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, jwt_required
 from models import *
 from configuration import Configuration
-from decorator import roleCheck
-
+from decorator import roleCheck, web3, bytecode, abi, owner, orderContract
+from web3.exceptions import ContractLogicError
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
@@ -21,6 +21,12 @@ def mGetOrdersToDeliver():
     return jsonify({
         "orders": orders_data
     })
+
+
+# owner --> constructor(customer)
+# customer --> function customerPaid()
+# customer --> function orderDelivered()
+# owner --> function courierJoined(courier)
 
 
 @application.route('/pick_up_order', methods=['POST'])
@@ -42,6 +48,27 @@ def mPickupOrder():
     if not order or order.status != Status.CREATED:
         return jsonify({
             'message': 'Invalid order id.'
+        }), 400
+
+    if 'address' not in request.json or request.json['address'] == '':
+        return jsonify({
+            'message': 'Missing address.'
+        }), 400
+
+    if not web3.is_address(request.json['address']):
+        return jsonify({
+            'message': 'Invalid address.'
+        }), 400
+
+    try:
+        currContract = web3.eth.contract(address=order.contract, abi=abi, bytecode=bytecode)
+        transaction_hash = currContract.functions.courierJoined(request.json['address']).transact({
+            "from": owner
+        })
+        receipt = web3.eth.wait_for_transaction_receipt(transaction_hash)
+    except ContractLogicError as error:
+        return jsonify({
+            "message": str(error)[str(error).find("revert ")+7:]
         }), 400
 
     order.status = Status.PENDING

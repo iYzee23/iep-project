@@ -26,6 +26,7 @@ class Order(database.Model):
     status = database.Column(database.Enum(Status), nullable=False, default=Status.CREATED)
     timestamp = database.Column(database.DateTime, nullable=False, default=datetime.datetime.utcnow)
     email = database.Column(database.String(256), nullable=False)
+    contract = database.Column(database.String(256), nullable=False)
 
     products = database.relationship("Product", secondary=ProductOrder.__table__, back_populates="orders")
 

@@ -6,7 +6,6 @@ from configuration import Configuration
 from redis import Redis
 import re
 
-
 application = Flask(__name__)
 application.config.from_object(Configuration)
 
