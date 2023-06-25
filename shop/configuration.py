@@ -4,6 +4,7 @@ import os
 
 databaseUrl = os.environ["DATABASE_URL"] if "DATABASE_URL" in os.environ else "localhost"
 redisHost = os.environ["REDIS_HOST"] if "REDIS_HOST" in os.environ else "localhost"
+blockChainUrl = os.environ["BLOCKCHAIN_URL"] if "BLOCKCHAIN_URL" in os.environ else "localhost"
 
 
 class Configuration:
@@ -12,3 +13,4 @@ class Configuration:
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     # JWT_REFRESH_TOKEN_EXPIRES = timedelta(hours=1)
     REDIS_HOST = redisHost
+    BLOCKCHAIN_URL = blockChainUrl

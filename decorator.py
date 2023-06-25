@@ -34,8 +34,7 @@ def roleCheck(role_name):
     return innerRole
 
 
-blockChainUrl = os.environ["BLOCKCHAIN_URL"] if "BLOCKCHAIN_URL" in os.environ else "localhost"
-web3 = Web3(HTTPProvider(f"http://{blockChainUrl}:8545"))
+web3 = Web3(HTTPProvider(f"http://{Configuration.BLOCKCHAIN_URL}:8545"))
 
 bytecode = read_file("./OrderContract.bin")
 abi = read_file("./OrderContract.abi")

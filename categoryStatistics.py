@@ -4,7 +4,7 @@ import os, json
 
 DATABASE_IP = os.environ["DATABASE_URL"] if "DATABASE_URL" in os.environ else "localhost"
 
-builder = SparkSession.builder.appName("PySpark Product Statistics")
+builder = SparkSession.builder.appName("PySpark Category Statistics")
 
 builder = builder.config(
     "spark.driver.extraClassPath",
@@ -57,19 +57,19 @@ order_df = spark.read.format("jdbc") \
 statistics = category_df.join(
     product_category_df,
     category_df["id"] == product_category_df["category_id"],
-    "left"
+    "fullouter"
 ).join(
     product_df,
     product_category_df["product_id"] == product_df["id"],
-    "left"
+    "fullouter"
 ).join(
     product_order_df,
     product_df["id"] == product_order_df["product_id"],
-    "left"
+    "fullouter"
 ).join(
     order_df,
     product_order_df["order_id"] == order_df["id"],
-    "left"
+    "fullouter"
 ).groupBy(
     category_df["name"]
 ).agg(
