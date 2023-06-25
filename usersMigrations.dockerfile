@@ -6,7 +6,7 @@ WORKDIR /opt/src/users
 COPY users/migrate.py ./migrate.py
 COPY users/configuration.py ./configuration.py
 COPY users/models.py ./models.py
-COPY ./requirements.txt ./requirements.txt
+COPY users/requirements.txt ./requirements.txt
 
 RUN pip install -r ./requirements.txt
 

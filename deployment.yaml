@@ -61,20 +61,6 @@ services:
       - courierNet
       - customerNet
 
-  sparkapp:
-    image: sparkapp
-    environment:
-      - DATABASE_URL=database
-    ports:
-      - 5004:5000
-    build:
-      context: .
-      dockerfile: sparkapp.dockerfile
-    networks:
-      - ownerNet
-      - courierNet
-      - customerNet
-
   blockchain:
     image: trufflesuite/ganache-cli
     ports:
@@ -156,6 +142,21 @@ services:
     build:
       context: .
       dockerfile: shopMigrations.dockerfile
+
+  sparkapp:
+    image: sparkapp
+    environment:
+      - DATABASE_URL=shopDB
+    depends_on: [ spark-master, spark-worker-1, spark-worker-2 ]
+    ports:
+      - 5004:5000
+    build:
+      context: .
+      dockerfile: sparkapp.dockerfile
+    networks:
+      - ownerNet
+      - courierNet
+      - customerNet
 
   owner:
     image: owner
